@@ -1,23 +1,15 @@
-name: Build Android APK
+name: Build Android
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup Java
+      # 1. On utilise une action qui installe le SDK direct sans "fetch remote" lent
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -25,21 +17,21 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Add Android platform
-        run: npx cap add android || npx cap sync android
-
-      - name: Sync web assets
-        run: npx cap sync android
-
-      - name: Build debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
         with:
-          name: UNAMDD-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          api-level: 34
+          build-tools: 34.0.0
+          # Ça force l'acceptation des licences et évite le blocage
+          accept-android-sdk-licenses: true
+
+      # 2. Cache pour ne plus re-télécharger à chaque push
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/build-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('*/.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Build APK
+        run: ./gradlew assembleRelease --no-daemon
