@@ -15,10 +15,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'  # Corrigé: Node 20 est déprécié
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5  # Corrigé: v4 est déprécié
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -26,9 +26,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          build-tools: 34.0.0
-          accept-android-sdk-licenses: true
+          accept-android-sdk-licenses: true  # Seul input valide maintenant
+
+      # On installe le SDK manuellement pour éviter le "Fetch remote"
+      - name: Install Android SDK Packages
+        run: |
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          sdkmanager --licenses
 
       - name: Install dependencies
         run: npm install
@@ -37,7 +41,7 @@ jobs:
       - name: Build Android Release APK
         run: cd android && ./gradlew assembleRelease --no-daemon
 
-      # POUR ANDROID NATIF SANS REACT NATIVE
+      # POUR ANDROID NATIF, décommente cette ligne et supprime celle du dessus
       # - name: Build Android Release APK
       #   run: ./gradlew assembleRelease --no-daemon
 
