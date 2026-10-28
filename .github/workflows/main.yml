@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'npm'
+          # ON ENLEVE LE CACHE ICI CAR PAS DE package-lock.json
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -33,9 +33,9 @@ jobs:
           echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Install NPM Dependencies
-        run: npm ci
+        run: npm install  # On utilise install au lieu de ci
 
-      # SI TU ES SUR REACT NATIVE DECOMMENTE CES 2 LIGNES
+      # SI REACT NATIVE
       # - name: Build JS Bundle
       #   run: npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
 
@@ -50,4 +50,3 @@ jobs:
         with:
           name: app-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
