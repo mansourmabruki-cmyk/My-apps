@@ -1,15 +1,23 @@
-name: Build Android
+name: Build Android APK
 
-on: [push]
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 1. On utilise une action qui installe le SDK direct sans "fetch remote" lent
-      - name: Setup JDK
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -20,18 +28,22 @@ jobs:
         with:
           api-level: 34
           build-tools: 34.0.0
-          # Ça force l'acceptation des licences et évite le blocage
           accept-android-sdk-licenses: true
 
-      # 2. Cache pour ne plus re-télécharger à chaque push
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.android/build-cache
-          key: gradle-${{ runner.os }}-${{ hashFiles('*/.gradle*', '**/gradle-wrapper.properties') }}
+      - name: Install dependencies
+        run: npm install
 
-      - name: Build APK
-        run: ./gradlew assembleRelease --no-daemon
+      # POUR REACT NATIVE
+      - name: Build Android Release APK
+        run: cd android && ./gradlew assembleRelease --no-daemon
+
+      # POUR ANDROID NATIF SANS REACT NATIVE
+      # - name: Build Android Release APK
+      #   run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          # Si Android natif: path: app/build/outputs/apk/release/app-release.apk
