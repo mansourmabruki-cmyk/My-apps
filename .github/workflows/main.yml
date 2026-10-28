@@ -7,47 +7,41 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Corrigé: ubuntu-latest va devenir 26
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5  # Corrigé: v4 -> v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5  # Corrigé: v4 -> v5
         with:
-          node-version: '22'  # Corrigé: Node 20 est déprécié
+          node-version: '22'
 
       - name: Setup Java
-        uses: actions/setup-java@v5  # Corrigé: v4 est déprécié
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4  # Corrigé: v3 -> v4
         with:
-          accept-android-sdk-licenses: true  # Seul input valide maintenant
+          accept-android-sdk-licenses: true
 
-      # On installe le SDK manuellement pour éviter le "Fetch remote"
       - name: Install Android SDK Packages
         run: |
           sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-          sdkmanager --licenses
+          yes | sdkmanager --licenses
 
       - name: Install dependencies
         run: npm install
 
       # POUR REACT NATIVE
       - name: Build Android Release APK
-        run: cd android && ./gradlew assembleRelease --no-daemon
-
-      # POUR ANDROID NATIF, décommente cette ligne et supprime celle du dessus
-      # - name: Build Android Release APK
-      #   run: ./gradlew assembleRelease --no-daemon
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
-          # Si Android natif: path: app/build/outputs/apk/release/app-release.apk
