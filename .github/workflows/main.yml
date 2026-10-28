@@ -1,54 +1,35 @@
-name: Build Android APK
+name: Diagnostic APK
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-      - name: Setup Java 17
+      - name: 1. Montrer la structure du projet
+        run: ls -la
+
+      - name: 2. Chercher gradlew partout
+        run: find . -name "gradlew"
+
+      - name: 3. Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
-      - name: Setup Node 22
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
+      - name: 4. Build si gradlew trouvé à la racine
+        if: hashFiles('gradlew') != ''
+        run: chmod +x gradlew && ./gradlew assembleRelease --stacktrace
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+      - name: 5. Build si gradlew trouvé dans android/
+        if: hashFiles('android/gradlew') != ''
+        run: cd android && chmod +x gradlew && ./gradlew assembleRelease --stacktrace
 
-      - name: Install SDK Packages
-        run: |
-          echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-          echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses
-
-      - name: Install NPM Dependencies
-        run: npm install
-
-      - name: Check gradlew exists
-        run: ls -la android/gradlew
-
-      - name: Grant execute permission for gradlew
-        run: cd android && chmod +x ./gradlew
-
-      - name: Build Release APK with full logs
-        run: |
-          cd android 
-          ./gradlew assembleRelease --no-daemon --stacktrace --info
-        continue-on-error: false
-
-      - name: Upload APK if exists
-        if: success()
+      - name: 6. Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: apk
+          path: '*/.apk'
